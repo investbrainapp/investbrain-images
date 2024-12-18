@@ -34,10 +34,15 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
 # Copy over supervisor configuration
 COPY ./docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Set permissions
-RUN chown -R www-data:www-data . \ 
-    && chmod -R 775 ./storage \
-    && chmod +x ./docker/entrypoint.sh 
+RUN curl -s "https://api.github.com/repos/investbrainapp/investbrain/releases/latest" | \
+        grep -o '"tarball_url": "[^"]*"' | \
+        cut -d '"' -f 4 | \
+        xargs curl -sL | \
+        tar --strip-components=1 -xz -C . \
+        && chown -R www-data:www-data . \ 
+        && chmod +x ./docker/entrypoint.sh \
+        && find . -type f -exec chmod 644 {} \; \
+        && find . -type d -exec chmod 755 {} \; 
 
 # Install composer
 COPY --from=composer:2.6.5 /usr/bin/composer /usr/local/bin/composer
